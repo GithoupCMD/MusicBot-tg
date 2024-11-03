@@ -14,7 +14,7 @@ import json
 import asyncpg
 from functools import partial
 
-
+# Класс Машины состояний
 class Form(StatesGroup):
   # При запуске и при команде /menu
   main_menu = State()
@@ -24,7 +24,7 @@ class Form(StatesGroup):
   loging = State()
   # При поиске
   search = State()
-  # При оплате подписки
+  # При оплате подписки (На будущее)
   pay = State()
 
 # Прокси
@@ -37,14 +37,16 @@ bot_token = data['bot-token']
 admin_id = data['admin-id']
 postgres_uri = data['postgresql-uri']
 
-# Инициализация бота, диспетчера, API YT Music и клиента MongoDB
+# Инициализация бота, диспетчера, API YT Music
 bot = Bot(bot_token)
 dp = Dispatcher()
 ytmusic = YTMusic()
-
+# Указываем параметр proxies, если нужны прокси
+#ytmusic = YTMusic(proxies=proxies)
 
 # Обработчик команды /start
 async def send_welcome(message: Message, state: FSMContext, base: asyncpg.Connection):
+  # Создание таблицы в PostreSQL
   await base.execute("""
     CREATE TABLE IF NOT EXISTS users (
       id BIGINT NOT NULL,
@@ -62,6 +64,7 @@ async def send_welcome(message: Message, state: FSMContext, base: asyncpg.Connec
     [KeyboardButton(text="Profile")]
   ]
   keyboard_start = ReplyKeyboardMarkup(keyboard=kb_buttons, resize_keyboard=True)
+  # Добавление пользователя в БД
   if await base.fetchrow("SELECT id FROM users WHERE id = $1", message.from_user.id) == None:
     await base.execute("INSERT INTO users (username, id, login_status) VALUES ($1, $2, $3)", message.from_user.username, message.from_user.id, "No")
   await message.answer(f"Hello, *{message.from_user.full_name}*! \nI can play, download and save any track from YouTube Music. \n\nChoose an option from below:", reply_markup=keyboard_start, parse_mode=ParseMode.MARKDOWN)
@@ -71,9 +74,11 @@ async def search(message: Message, state: FSMContext):
   await message.answer("What do you want to search?\n\nType name of track or artist", reply_markup=ReplyKeyboardRemove())
   await state.set_state(Form.search)
 
+# Функция для загрузки треков и отправки в чат (В разработке)
 async def downloads(message: Message, state: FSMContext, base: asyncpg.Connection):
   await message.answer("Function in development...")
 
+# Профиль пользователя
 async def profile(message: Message, state: FSMContext, base: asyncpg.Connection):
   user = await base.fetchrow("SELECT * FROM users WHERE id = $1", message.from_user.id)
 
@@ -106,9 +111,11 @@ async def menu(message: Message, state: FSMContext):
 async def search_query(message: Message, state: FSMContext):
   await message.reply(f"Search results: {json.dumps(ytmusic.search(message.text, limit=10))})")
 
+# Вход в аккаунт YouTube Music (В разработке)
 async def login(message: Message, state: FSMContext, base: asyncpg.Connection):
   await message.answer("Function in development...")
 
+# Основная функция - обработка комманд и запуск бота
 async def main():
   # Вход в базу данных
   db = await asyncpg.connect(postgres_uri)
