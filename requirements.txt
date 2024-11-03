@@ -1,0 +1,4 @@
+aiogram>=3.13
+ytmusicapi>=1.8
+asyncpg>=0.30
+pysocks>=1.7.1

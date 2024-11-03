@@ -1,0 +1,5 @@
+{
+	"admin-id": 1234567,
+	"bot-token": "YOUR TOKEN",
+	"postgres-uri": "YOUR URI"
+}
